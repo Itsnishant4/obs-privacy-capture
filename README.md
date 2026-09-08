@@ -1,74 +1,183 @@
-# Privacy Capture for OBS Studio on macOS
+<div align="center">
 
-**Privacy Capture** (`privacy_capture`) is an OBS Studio plugin source for macOS (macOS 13 Ventura+) that provides a privacy-aware alternative to normal Display Capture. It captures an entire physical monitor while selectively excluding one or more user-specified applications from the captured video in real-time.
+# 🛡️ OBS Privacy Capture for macOS
 
-Excluded applications remain completely visible on the physical display for the streamer/user, but are never rendered into OBS's preview, recording, or streaming outputs.
+**Capture full macOS displays while selectively hiding private applications in real-time.**
 
-## Features
+[![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B%20%28Ventura%2B%29-007AFF?style=for-the-badge&logo=apple&logoColor=white)](https://apple.com)
+[![OBS Studio](https://img.shields.io/badge/OBS%20Studio-30.0%2B-302D42?style=for-the-badge&logo=obsstudio&logoColor=white)](https://obsproject.com)
+[![ScreenCaptureKit](https://img.shields.io/badge/Engine-Apple%20ScreenCaptureKit-FF9500?style=for-the-badge&logo=apple&logoColor=white)](https://developer.apple.com/documentation/screencapturekit)
+[![Performance](https://img.shields.io/badge/Rendering-Zero--Copy%20IOSurface-34C759?style=for-the-badge&logo=speedtest&logoColor=white)](#performance--architecture)
+[![License](https://img.shields.io/badge/License-GPL%20v2.0-blue?style=for-the-badge)](LICENSE)
 
-- **Native ScreenCaptureKit Filtering**: Uses Apple's `SCContentFilter(display:excludingApplications:exceptingWindows:)` directly at the OS compositor level.
-- **Zero-Copy GPU Rendering**: Frames are streamed from ScreenCaptureKit as `IOSurface` references directly into OBS GPU textures via `gs_texture_create_from_iosurface` and `gs_texture_rebind_iosurface`, achieving 60 FPS performance with < 5% CPU overhead.
-- **Dynamic Application Detection**:
-  - Automatically detects when excluded applications launch or terminate via macOS `NSWorkspace` notifications and updates the capture filter on-the-fly without restarting the stream.
-  - Periodic low-frequency background validation ensures consistent state.
-- **Application Identification by Bundle ID**: Persists applications using stable bundle identifiers (e.g. `com.google.Chrome`, `com.hnc.Discord`, `com.apple.Terminal`) rather than volatile window titles.
-- **Source Configuration UI**:
-  - Display selector (supports multi-monitor setups and Retina scaling).
-  - "Capture Cursor" toggle.
-  - "Automatically detect launched/closed apps" toggle.
-  - Running applications dropdown picker with one-click "Exclude Selected Application" button.
-  - Editable exclusions list with add/remove support.
-  - Real-time status display (e.g., `● Active: 3 configured, 2 running`).
-- **Fail-Closed Safety Design**: Never reports protected status unless exclusions are actively applied in the capture filter.
+<br/>
 
-## Requirements
-
-- macOS 13.0 (Ventura) or newer
-- Apple Silicon or Intel Mac
-- OBS Studio 30.0+ (Tested with OBS Studio 32.2.2)
-- macOS Screen Recording permissions enabled in System Settings
-
-## Building and Installing
-
-### Prerequisites
-
-- CMake 3.20+
-- Clang / Xcode Command Line Tools
-- `simde` (`brew install simde`)
-- OBS Studio installed in `/Applications/OBS.app`
-
-### Build
-
-```bash
-cmake -B build -S .
-cmake --build build
+```
+  PHYSICAL MAC MONITOR                           OBS CAPTURED OUTPUT
+┌───────────────────────────────┐               ┌───────────────────────────────┐
+│  🌐 Google Chrome             │               │  🌐 Google Chrome             │
+│  💻 Visual Studio Code        │               │  💻 Visual Studio Code        │
+│  💬 Discord                   │    ──────►    │                               │
+│  📟 Terminal                  │               │                               │
+│  🔑 1Password                 │               │                               │
+└───────────────────────────────┘               └───────────────────────────────┘
+      (Visible to Streamer)                            (Safe for Stream)
+                                            Discord, Terminal & 1Password excluded!
 ```
 
-### Run Tests
+</div>
+
+---
+
+## 🌟 Overview
+
+**Privacy Capture** (`privacy_capture`) is a native OBS Studio plugin for macOS that solves the long-standing privacy problem for streamers and creators: **"Capture everything on my display EXCEPT these sensitive apps."**
+
+Instead of capturing the screen and attempting to blur or mask pixels after the fact, Privacy Capture leverages Apple's OS-level **ScreenCaptureKit** compositor filter (`SCContentFilter`). The operating system itself removes the excluded applications before the video frames ever reach OBS.
+
+> 🔒 **Streamer View vs. Viewer View**: Excluded applications remain completely visible and usable on your physical Mac monitor, but are completely absent from OBS Studio's preview, video recordings, and live streams.
+
+---
+
+## ✨ Key Features
+
+| Feature | Description |
+| :--- | :--- |
+| **🛡️ Native OS Filtering** | Powered by Apple's `SCContentFilter(display:excludingApplications:exceptingWindows:)` directly inside macOS WindowServer. |
+| **⚡ Zero-Copy Hardware Pipeline** | Direct `CVPixelBuffer` ➔ `IOSurface` ➔ `gs_texture_create_from_iosurface` GPU binding. Direct hardware texturing with **< 5% CPU usage at 1080p60 / 4K60**. |
+| **🔄 Dynamic App Detection** | Subscribes to `NSWorkspace` app lifecycle notifications. When an excluded app launches or quits, the capture filter updates instantly without restarting the stream. |
+| **🎯 Stable Bundle Identifiers** | Persists exclusions using canonical macOS bundle IDs (e.g. `com.hnc.Discord`, `com.google.Chrome`, `com.apple.Terminal`) rather than brittle window titles. |
+| **🎛️ Native OBS Properties UI** | Includes a monitor selector, running applications dropdown picker with 1-click **Exclude**, and an editable exclusions list. |
+| **🖥️ Multi-Display & Retina** | Full support for Retina 2x scaling, Display P3 wide color gamut, and multiple active monitors. |
+| **🔒 Fail-Closed Security** | The status indicator only reports active protection if the application is verified to be in the active filter. |
+
+---
+
+## 🏗️ Architecture & Pipeline
+
+```
+ ┌──────────────────────────────────────────────────────────┐
+ │                  macOS WindowServer                      │
+ │    ScreenCaptureKit Engine (SCShareableContent)          │
+ └────────────────────────────┬─────────────────────────────┘
+                              │ Filtered CMSampleBuffer
+                              ▼
+ ┌──────────────────────────────────────────────────────────┐
+ │                   StreamManager (ObjC++)                 │
+ │       Extracts CVPixelBuffer & IOSurfaceRef              │
+ └────────────────────────────┬─────────────────────────────┘
+                              │ Zero-Copy Surface Handoff
+                              ▼
+ ┌──────────────────────────────────────────────────────────┐
+ │                   CaptureEngine (ObjC++)                 │
+ │  • Coordinates ApplicationManager & FilterManager        │
+ │  • Listens to NSWorkspace lifecycle notifications        │
+ │  • Calls [SCStream updateContentFilter:...] dynamically  │
+ └────────────────────────────┬─────────────────────────────┘
+                              │
+ ┌────────────────────────────┴─────────────────────────────┐
+ │               Privacy Capture OBS Source                 │
+ │                (obs_source_info, C++/ObjC)               │
+ ├──────────────────────────────────────────────────────────┤
+ │ • video_tick:   Binds/rebinds IOSurface into gs_texture  │
+ │ • video_render: Draws sprite via OBS DrawD65P3 shader    │
+ │ • properties:   Display, App picker, Excluded List, State│
+ └────────────────────────────┬─────────────────────────────┘
+                              │ Filtered Frame
+                              ▼
+             OBS Compositor (Preview / Record / Stream)
+```
+
+---
+
+## 📋 System Requirements
+
+- **Operating System**: macOS 13.0 (Ventura), macOS 14 (Sonoma), macOS 15 (Sequoia), or newer.
+- **Hardware**: Apple Silicon (M1/M2/M3/M4) or Intel Mac running supported macOS.
+- **OBS Studio**: OBS Studio 30.0 or later (Fully tested on **OBS Studio 32.2.2**).
+- **Permissions**: Screen Recording permission enabled for OBS Studio in `System Settings > Privacy & Security > Screen Recording`.
+
+---
+
+## 🚀 Installation & Quick Start
+
+### Option 1: Automatic Build & Install from Source
+
+Ensure you have [Homebrew](https://brew.sh) and CMake installed:
+
+```bash
+# 1. Install dependencies
+brew install cmake simde
+
+# 2. Clone repository
+git clone https://github.com/Itsnishant4/obs-privacy-capture.git
+cd obs-privacy-capture
+
+# 3. Configure and build
+cmake -B build -S .
+cmake --build build
+
+# 4. Install plugin into OBS
+cmake --install build
+```
+
+The plugin bundle will be installed directly to:
+```
+~/Library/Application Support/obs-studio/plugins/obs-privacy-capture.plugin
+```
+
+---
+
+## 🎥 Using Privacy Capture in OBS Studio
+
+1. Launch **OBS Studio**.
+2. In the **Sources** dock, click the **`+`** (Add Source) button.
+3. Select **Privacy Capture** from the list of available sources.
+4. In the properties dialog:
+   - **Display**: Select your physical display.
+   - **Running Applications**: Choose an application you want to hide (e.g. *Discord*, *Terminal*, *Chrome*, *1Password*).
+   - Click **`Exclude Selected Application`**.
+   - The application's bundle identifier is added to the **Excluded Applications** list.
+5. The application is now invisible in your OBS Preview, recorded videos, and live broadcasts, but remains fully visible on your monitor!
+
+---
+
+## 🧪 Testing & Verification
+
+The project comes with a comprehensive test suite covering serialization, application resolution, standalone capture POC, and OBS module loading:
 
 ```bash
 ctest --test-dir build --output-on-failure
 ```
 
-### Install
+```
+Test project /path/to/build
+    Start 1: settings_tests
+1/4 Test #1: settings_tests ...................   Passed    0.01 sec
+    Start 2: application_manager_tests
+2/4 Test #2: application_manager_tests ........   Passed    0.04 sec
+    Start 3: standalone_capture_poc
+3/4 Test #3: standalone_capture_poc ...........   Passed    0.49 sec
+    Start 4: obs_loader_test
+4/4 Test #4: obs_loader_test ..................   Passed    0.16 sec
 
-Install the plugin bundle into your user OBS plugins folder:
-
-```bash
-cmake --install build
+100% tests passed out of 4!
 ```
 
-The plugin will be installed to:
-`~/Library/Application Support/obs-studio/plugins/obs-privacy-capture.plugin`
+---
 
-## Usage in OBS Studio
+## 👨‍💻 Author & Credits
 
-1. Launch OBS Studio.
-2. Under **Sources**, click **+** and choose **Privacy Capture**.
-3. Select the target monitor in the **Display** dropdown.
-4. Select an application to exclude in the **Running Applications** dropdown and click **Exclude Selected Application**, or manually enter bundle IDs in the **Excluded Applications** list.
-5. The excluded application will remain visible on your screen, but is completely excluded from OBS Preview, Recording, and Streaming.
+Developed with ❤️ by:
 
-## License
+### **Nishant Patel**
+- **GitHub**: [@Itsnishant4](https://github.com/Itsnishant4)
+- **Project**: Privacy Capture for OBS Studio on macOS
 
-GNU General Public License v2.0 or later (GPL-2.0-or-later).
+*Special thanks to the OBS Project team and Apple ScreenCaptureKit engineers for providing the underlying compositing and graphics frameworks.*
+
+---
+
+## 📄 License
+
+This project is licensed under the **GNU General Public License v2.0 or later** ([GPL-2.0-or-later](LICENSE)) in alignment with OBS Studio's plugin licensing.

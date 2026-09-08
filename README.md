@@ -9,6 +9,7 @@
 [![ScreenCaptureKit](https://img.shields.io/badge/Engine-Apple%20ScreenCaptureKit-FF9500?style=for-the-badge&logo=apple&logoColor=white)](https://developer.apple.com/documentation/screencapturekit)
 [![Performance](https://img.shields.io/badge/Rendering-Zero--Copy%20IOSurface-34C759?style=for-the-badge&logo=speedtest&logoColor=white)](#performance--architecture)
 [![License](https://img.shields.io/badge/License-GPL%20v2.0-blue?style=for-the-badge)](LICENSE)
+[![Buy Me A Coffee](https://img.shields.io/badge/Support-Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/Nishant4)
 
 <br/>
 
@@ -166,12 +167,25 @@ Test project /path/to/build
 
 ---
 
+## ☕ Support & Sponsor
+
+If you find this plugin helpful for your streaming setup or workflow, consider buying me a coffee!
+
+<p align="left">
+  <a href="https://www.buymeacoffee.com/Nishant4" target="_blank">
+    <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=Nishant4&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" alt="Buy Me A Coffee" />
+  </a>
+</p>
+
+---
+
 ## 👨‍💻 Author & Credits
 
 Developed with ❤️ by:
 
 ### **Nishant Patel**
 - **GitHub**: [@Itsnishant4](https://github.com/Itsnishant4)
+- **Buy Me a Coffee**: [buymeacoffee.com/Nishant4](https://www.buymeacoffee.com/Nishant4)
 - **Project**: Privacy Capture for OBS Studio on macOS
 
 *Special thanks to the OBS Project team and Apple ScreenCaptureKit engineers for providing the underlying compositing and graphics frameworks.*

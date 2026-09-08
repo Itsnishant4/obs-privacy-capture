@@ -26,6 +26,12 @@
                                             Discord, Terminal & 1Password excluded!
 ```
 
+<br/>
+
+<a href="https://www.buymeacoffee.com/Nishant4" target="_blank">
+  <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=Nishant4&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" alt="Buy Me A Coffee" height="42" />
+</a>
+
 </div>
 
 ---
@@ -167,28 +173,64 @@ Test project /path/to/build
 
 ---
 
-## ☕ Support & Sponsor
+<br/>
 
-If you find this plugin helpful for your streaming setup or workflow, consider buying me a coffee!
+<div align="center">
 
-<p align="left">
-  <a href="https://www.buymeacoffee.com/Nishant4" target="_blank">
-    <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=Nishant4&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" alt="Buy Me A Coffee" />
-  </a>
-</p>
+<!-- STANDOUT SPONSOR CARD -->
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td align="center" width="720">
+      <br/>
+      <h2>☕ Support the Project</h2>
+      <p>
+        Building and maintaining a native macOS ScreenCaptureKit plugin requires extensive testing and maintenance across macOS versions.
+        <br/>
+        If <b>Privacy Capture</b> saved your stream or recordings from accidental leaks of private messages, code, or personal data, consider showing your support!
+      </p>
+      <br/>
+      <a href="https://www.buymeacoffee.com/Nishant4" target="_blank">
+        <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=Nishant4&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" alt="Buy Me A Coffee" height="54" />
+      </a>
+      <br/><br/>
+      <p>
+        <sub>⭐ Every coffee fuels new features, bug fixes, and ongoing macOS updates! ⭐</sub>
+      </p>
+      <br/>
+    </td>
+  </tr>
+</table>
 
----
+<br/><br/>
 
-## 👨‍💻 Author & Credits
+<!-- STANDOUT CREATOR CARD -->
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td align="center" width="720">
+      <br/>
+      <h2>👨‍💻 Author & Lead Developer</h2>
+      <br/>
+      <img src="https://github.com/Itsnishant4.png" width="90" height="90" style="border-radius: 50%;" alt="Nishant Patel" />
+      <h3>Nishant Patel</h3>
+      <p><i>Creator & Maintainer of Privacy Capture for OBS on macOS</i></p>
+      <p>
+        <a href="https://github.com/Itsnishant4">
+          <img src="https://img.shields.io/badge/GitHub-Itsnishant4-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Profile" />
+        </a>
+        &nbsp;&nbsp;
+        <a href="https://www.buymeacoffee.com/Nishant4" target="_blank">
+          <img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Nishant4-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Support on BMC" />
+        </a>
+      </p>
+      <p><sub>Special thanks to the OBS Project team and Apple ScreenCaptureKit engineers.</sub></p>
+      <br/>
+    </td>
+  </tr>
+</table>
 
-Developed with ❤️ by:
+<br/>
 
-### **Nishant Patel**
-- **GitHub**: [@Itsnishant4](https://github.com/Itsnishant4)
-- **Buy Me a Coffee**: [buymeacoffee.com/Nishant4](https://www.buymeacoffee.com/Nishant4)
-- **Project**: Privacy Capture for OBS Studio on macOS
-
-*Special thanks to the OBS Project team and Apple ScreenCaptureKit engineers for providing the underlying compositing and graphics frameworks.*
+</div>
 
 ---
 

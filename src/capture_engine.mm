@@ -32,6 +32,7 @@
 
     PrivacyCaptureSettings _settings;
     std::set<pid_t> _prevExcludedPIDs;
+    CaptureFilterMode _prevFilterMode;
     id _launchObserver;
     id _terminateObserver;
     dispatch_source_t _periodicTimer;
@@ -44,6 +45,7 @@
         _surfaceLock = [[NSLock alloc] init];
         _currentSurface = NULL;
         _prevSurface = NULL;
+        _prevFilterMode = CaptureModeExclude;
         _statusCode = CaptureStatusReady;
         _statusMessage = @"● Ready";
         _engineQueue = dispatch_queue_create("com.antigravity.privacy_capture.engine", DISPATCH_QUEUE_SERIAL);
@@ -217,9 +219,12 @@
         _prevExcludedPIDs.insert(app.processID);
     }
 
+    _prevFilterMode = settings.filter_mode;
+
     // 4. Create content filter
     SCContentFilter *filter = [self.filterManager createFilterForDisplay:display
-                                                            applications:runningExcluded];
+                                                            applications:runningExcluded
+                                                              filterMode:settings.filter_mode];
     if (!filter) {
         self.statusCode = CaptureStatusError;
         self.statusMessage = @"⚠ Failed to create capture filter";
@@ -258,6 +263,7 @@
     bool cursorChanged = (_settings.show_cursor != newSettings.show_cursor);
     bool exclusionsChanged = (_settings.get_active_bundle_ids() != newSettings.get_active_bundle_ids());
     bool autoRefreshChanged = (_settings.auto_refresh != newSettings.auto_refresh);
+    bool modeChanged = (_settings.filter_mode != newSettings.filter_mode);
 
     _settings = newSettings;
 
@@ -278,7 +284,7 @@
         return [self startWithSettings:_settings targetFPS:60];
     }
 
-    if (exclusionsChanged) {
+    if (exclusionsChanged || modeChanged) {
         return [self checkAndRefreshExclusions];
     }
 
@@ -300,14 +306,18 @@
 
     BOOL setChanged = [self.filterManager hasExclusionSetChangedWithPreviousPIDs:_prevExcludedPIDs
                                                                  currentExcluded:runningExcluded];
-    if (setChanged || !self.streamManager.isCapturing) {
+    BOOL modeChanged = (_prevFilterMode != _settings.filter_mode);
+
+    if (setChanged || modeChanged || !self.streamManager.isCapturing) {
         _prevExcludedPIDs.clear();
         for (SCRunningApplication *app in runningExcluded) {
             _prevExcludedPIDs.insert(app.processID);
         }
+        _prevFilterMode = _settings.filter_mode;
 
         SCContentFilter *newFilter = [self.filterManager createFilterForDisplay:display
-                                                                   applications:runningExcluded];
+                                                                   applications:runningExcluded
+                                                                     filterMode:_settings.filter_mode];
         if (newFilter) {
             [self.streamManager updateFilter:newFilter completionAsync:nil];
         }
@@ -320,9 +330,14 @@
 - (void)updateStatusStringWithRunningApps:(NSArray<SCRunningApplication *> *)runningApps {
     size_t totalConfigured = _settings.get_active_bundle_ids().size();
     size_t runningCount = runningApps.count;
+    bool isInclude = (_settings.filter_mode == CaptureModeInclude);
 
     if (totalConfigured == 0) {
-        self.statusMessage = @"● Privacy filter active (no apps currently excluded)";
+        if (isInclude) {
+            self.statusMessage = @"● Include Mode: No apps selected (desktop will be blank until apps added)";
+        } else {
+            self.statusMessage = @"● Exclude Mode: Privacy filter active (no apps currently excluded)";
+        }
     } else {
         NSMutableArray<NSString *> *names = [NSMutableArray array];
         for (SCRunningApplication *app in runningApps) {
@@ -331,12 +346,13 @@
             }
         }
         NSString *namesStr = [names componentsJoinedByString:@", "];
+        NSString *modePrefix = isInclude ? @"● Include Workspace" : @"● Exclude Mode";
         if (names.count > 0) {
-            self.statusMessage = [NSString stringWithFormat:@"● Active: %zu configured, %zu running (%@)",
-                                  totalConfigured, runningCount, namesStr];
+            self.statusMessage = [NSString stringWithFormat:@"%@: %zu configured, %zu running (%@)",
+                                  modePrefix, totalConfigured, runningCount, namesStr];
         } else {
-            self.statusMessage = [NSString stringWithFormat:@"● Active: %zu configured (0 currently running)",
-                                  totalConfigured];
+            self.statusMessage = [NSString stringWithFormat:@"%@: %zu configured (0 currently running)",
+                                  modePrefix, totalConfigured];
         }
     }
 }

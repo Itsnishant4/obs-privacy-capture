@@ -277,13 +277,21 @@ static obs_properties_t *privacy_capture_get_properties(void *data) {
         }
     }
 
-    // 2. Capture Cursor
+    // 2. Mode Selector: Exclude Mode (Blacklist) vs Include Workspace Mode (Whitelist)
+    obs_property_t *mode_list = obs_properties_add_list(props, "filter_mode",
+                                                         obs_module_text("PrivacyCapture.FilterMode"),
+                                                         OBS_COMBO_TYPE_LIST,
+                                                         OBS_COMBO_FORMAT_INT);
+    obs_property_list_add_int(mode_list, obs_module_text("PrivacyCapture.FilterMode.Exclude"), CaptureModeExclude);
+    obs_property_list_add_int(mode_list, obs_module_text("PrivacyCapture.FilterMode.Include"), CaptureModeInclude);
+
+    // 3. Capture Cursor
     obs_properties_add_bool(props, "show_cursor", obs_module_text("PrivacyCapture.ShowCursor"));
 
-    // 3. Auto Refresh / Dynamic Detection
+    // 4. Auto Refresh / Dynamic Detection
     obs_properties_add_bool(props, "auto_refresh", obs_module_text("PrivacyCapture.AutoRefresh"));
 
-    // 4. Quick-Add Application Picker
+    // 5. Quick-Add Application Picker
     obs_property_t *available_apps_list = obs_properties_add_list(props, "selected_app_to_add",
                                                                   obs_module_text("PrivacyCapture.SelectApp"),
                                                                   OBS_COMBO_TYPE_LIST,
@@ -300,14 +308,14 @@ static obs_properties_t *privacy_capture_get_properties(void *data) {
         }
     }
 
-    // 5. Exclude Selected App Button
+    // 6. Add Selected App Button
     obs_properties_add_button2(props, "add_app_btn",
-                               obs_module_text("PrivacyCapture.ExcludeSelectedApp"),
+                               obs_module_text("PrivacyCapture.AddSelectedApp"),
                                on_add_application_clicked, s);
 
-    // 6. Excluded Applications List (Editable List of bundle IDs)
+    // 7. Filtered Applications List (Editable List of bundle IDs)
     obs_properties_add_editable_list(props, "excluded_apps",
-                                     obs_module_text("PrivacyCapture.ExcludedApps"),
+                                     obs_module_text("PrivacyCapture.FilterList"),
                                      OBS_EDITABLE_LIST_TYPE_STRINGS, NULL, NULL);
 
     // 7. Refresh Button

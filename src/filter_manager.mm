@@ -40,13 +40,26 @@
 }
 
 - (SCContentFilter * _Nullable)createFilterForDisplay:(SCDisplay *)display
-                                         applications:(NSArray<SCRunningApplication *> *)apps {
+                                         applications:(NSArray<SCRunningApplication *> *)apps
+                                           filterMode:(CaptureFilterMode)mode {
     if (!display) return nil;
-    NSArray<SCRunningApplication *> *exclusions = apps ? apps : @[];
+    NSArray<SCRunningApplication *> *targetApps = apps ? apps : @[];
     NSArray<SCWindow *> *excepting = @[];
-    return [[SCContentFilter alloc] initWithDisplay:display
-                              excludingApplications:exclusions
-                                   exceptingWindows:excepting];
+
+    if (mode == CaptureModeInclude) {
+        return [[SCContentFilter alloc] initWithDisplay:display
+                                  includingApplications:targetApps
+                                       exceptingWindows:excepting];
+    } else {
+        return [[SCContentFilter alloc] initWithDisplay:display
+                                  excludingApplications:targetApps
+                                       exceptingWindows:excepting];
+    }
+}
+
+- (SCContentFilter * _Nullable)createFilterForDisplay:(SCDisplay *)display
+                                         applications:(NSArray<SCRunningApplication *> *)apps {
+    return [self createFilterForDisplay:display applications:apps filterMode:CaptureModeExclude];
 }
 
 - (BOOL)hasExclusionSetChangedWithPreviousPIDs:(const std::set<pid_t> &)prevPIDs

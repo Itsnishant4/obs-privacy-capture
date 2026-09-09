@@ -5,6 +5,11 @@
 #include <cstdint>
 #include <obs-data.h>
 
+enum CaptureFilterMode {
+    CaptureModeExclude = 0, // Exclude selected apps (blacklist)
+    CaptureModeInclude = 1  // Include ONLY selected apps (whitelist / workspace)
+};
+
 struct ExcludedApplication {
     std::string bundle_id;
     std::string display_name;
@@ -16,6 +21,7 @@ struct PrivacyCaptureSettings {
     uint32_t display_id = 0;
     bool show_cursor = true;
     bool auto_refresh = true;
+    CaptureFilterMode filter_mode = CaptureModeExclude;
     std::vector<ExcludedApplication> excluded_apps;
 
     std::vector<std::string> get_active_bundle_ids() const;

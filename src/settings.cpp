@@ -61,6 +61,7 @@ void privacy_capture_settings_set_defaults(obs_data_t *settings) {
     obs_data_set_default_string(settings, "display_uuid", "");
     obs_data_set_default_bool(settings, "show_cursor", true);
     obs_data_set_default_bool(settings, "auto_refresh", true);
+    obs_data_set_default_int(settings, "filter_mode", CaptureModeExclude);
     obs_data_set_default_string(settings, "selected_app_to_add", "");
 }
 
@@ -73,6 +74,7 @@ PrivacyCaptureSettings privacy_capture_settings_load(obs_data_t *settings) {
 
     config.show_cursor = obs_data_get_bool(settings, "show_cursor");
     config.auto_refresh = obs_data_get_bool(settings, "auto_refresh");
+    config.filter_mode = (CaptureFilterMode)obs_data_get_int(settings, "filter_mode");
 
     // Load excluded applications list from obs_data_array
     obs_data_array_t *array = obs_data_get_array(settings, "excluded_apps");
@@ -107,6 +109,7 @@ void privacy_capture_settings_save(const PrivacyCaptureSettings &config, obs_dat
     obs_data_set_string(settings, "display_uuid", config.display_uuid.c_str());
     obs_data_set_bool(settings, "show_cursor", config.show_cursor);
     obs_data_set_bool(settings, "auto_refresh", config.auto_refresh);
+    obs_data_set_int(settings, "filter_mode", (long long)config.filter_mode);
 
     obs_data_array_t *array = obs_data_array_create();
     for (const auto &app : config.excluded_apps) {

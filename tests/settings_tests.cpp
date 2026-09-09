@@ -10,6 +10,7 @@ int main() {
     PrivacyCaptureSettings config;
     assert(config.show_cursor == true);
     assert(config.auto_refresh == true);
+    assert(config.filter_mode == CaptureModeExclude);
     assert(config.excluded_apps.empty());
     assert(config.get_active_bundle_ids().empty());
     std::cout << "  ✓ Defaults verified" << std::endl;
@@ -40,6 +41,7 @@ int main() {
     config.display_uuid = "12345-67890";
     config.show_cursor = false;
     config.auto_refresh = true;
+    config.filter_mode = CaptureModeInclude;
     config.add_excluded_app("com.google.Chrome", "Google Chrome");
     config.add_excluded_app("com.microsoft.VSCode", "VS Code");
 
@@ -49,6 +51,7 @@ int main() {
     assert(loaded.display_uuid == "12345-67890");
     assert(loaded.show_cursor == false);
     assert(loaded.auto_refresh == true);
+    assert(loaded.filter_mode == CaptureModeInclude);
     assert(loaded.is_app_excluded("com.hnc.Discord") == true);
     assert(loaded.is_app_excluded("com.google.Chrome") == true);
     assert(loaded.is_app_excluded("com.microsoft.VSCode") == true);

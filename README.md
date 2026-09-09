@@ -72,12 +72,13 @@ Instead of capturing the full screen and attempting to blur or mask pixels after
 
 | Feature | Description |
 | :--- | :--- |
-| **🛡️ Native OS-Level Filtering** | Powered by Apple's `SCContentFilter(display:excludingApplications:exceptingWindows:)` directly inside macOS WindowServer. |
+| **🛡️ Dual Capture Modes** | **Exclude Mode (Blacklist)**: Hide sensitive apps from your screen.<br/>**Include Workspace Mode (Whitelist)**: Capture *only* selected apps on screen—ideal for multi-desktop (macOS Spaces) workflows! |
+| **🛡️ Native OS-Level Filtering** | Powered by Apple's `SCContentFilter(display:excludingApplications:exceptingWindows:)` and `initWithDisplay:includingApplications:exceptingWindows:` directly inside macOS WindowServer. |
 | **⚡ Zero-Copy Hardware Pipeline** | Direct `CVPixelBuffer` ➔ `IOSurface` ➔ `gs_texture_create_from_iosurface` GPU binding. Direct hardware texturing with **< 5% CPU overhead at 1080p60 / 4K60**. |
 | **⌨️ Universal Hotkey System** | Press a global keyboard shortcut while inside **any focused application** to instantly hide or toggle it from your live stream. |
 | **🔄 Real-Time Dynamic Detection** | Subscribes to `NSWorkspace` application lifecycle notifications. When an excluded app opens or closes, the capture filter updates seamlessly without stream restarts or dropped frames. |
 | **🎯 Stable Bundle Identifiers** | Persists exclusions using canonical macOS bundle IDs (e.g. `com.hnc.Discord`, `com.google.Chrome`, `com.apple.Terminal`) rather than fragile window titles. |
-| **🎛️ Native OBS Properties UI** | Includes a monitor selector, running applications dropdown picker with 1-click **Exclude**, and an editable exclusions list. |
+| **🎛️ Native OBS Properties UI** | Includes mode selector, monitor selector, running applications dropdown picker with 1-click **Add**, and an editable filter list. |
 | **🖥️ Multi-Display & Retina Scaling** | Full native support for Retina 2x scaling, Display P3 wide color gamut, and multi-monitor setups. |
 | **🔒 Fail-Closed Privacy Guarantee** | The status indicator only reports active protection when the application is verified to be actively filtered by macOS. |
 
@@ -92,23 +93,31 @@ Privacy Capture provides an intuitive, native property inspector right inside OB
 │ Privacy Capture Properties                                             │
 ├────────────────────────────────────────────────────────────────────────┤
 │ Display               [ Built-in Retina Display (1920x1080)        ▼ ] │
+│ Capture Mode          [ Include Workspace Mode (Capture ONLY)      ▼ ] │
+│                         • Exclude Mode (Hide selected apps)            │
+│                         • Include Workspace Mode (Capture ONLY)        │
 │ ☑ Capture Cursor                                                       │
 │ ☑ Automatically detect launched/closed apps                            │
 │                                                                        │
-│ Running Applications  [ Discord (com.hnc.Discord)                  ▼ ] │
-│                       [ Exclude Selected Application ]                 │
+│ Running Applications  [ Google Chrome (com.google.Chrome)          ▼ ] │
+│                       [ Add Selected Application to Filter ]           │
 │                                                                        │
-│ Excluded Applications (Bundle IDs):                                    │
+│ Active Filter List (Bundle IDs):                                       │
 │ ┌────────────────────────────────────────────────────────────────────┐ │
-│ │ com.hnc.Discord                                                    │ │
-│ │ com.apple.Terminal                                                 │ │
-│ │ com.agilebits.onepassword                                          │ │
+│ │ com.google.Chrome                                                  │ │
+│ │ com.microsoft.VSCode                                               │ │
 │ └────────────────────────────────────────────────────────────────────┘ │
 │                       [ Refresh Applications ]                         │
 │                                                                        │
-│ Status: ● Active: 3 configured, 2 running (Discord, Terminal)          │
+│ Status: ● Include Workspace: 2 configured, 2 running (Chrome, VSCode)  │
 └────────────────────────────────────────────────────────────────────────┘
 ```
+
+### 🖥️ Working with macOS Virtual Desktops (Spaces)
+When you have multiple desktops in Mission Control (Desktop 1, 2, 3, 4) on your Mac:
+- Switch **Capture Mode** to **Include Workspace Mode**.
+- Add the applications that belong to your stream workspace (e.g., *Google Chrome* and *VS Code*).
+- **Benefit**: You can 3-finger swipe across Desktops 1, 2, 3, and 4 on your Mac to check emails, Slack, or Discord—**OBS will only ever render the included apps**. Any other application or private desktop you switch to remains 100% invisible to viewers!
 
 ---
 

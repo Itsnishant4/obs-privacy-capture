@@ -2,6 +2,7 @@
 
 #import <Foundation/Foundation.h>
 #import <ScreenCaptureKit/ScreenCaptureKit.h>
+#include "settings.hpp"
 #include <string>
 #include <vector>
 #include <set>
@@ -12,6 +13,10 @@
 - (SCDisplay * _Nullable)findDisplayInContent:(SCShareableContent *)content
                                  displayUUID:(const std::string &)displayUUID
                                    displayID:(uint32_t)displayID;
+
+- (SCContentFilter * _Nullable)createFilterForDisplay:(SCDisplay *)display
+                                         applications:(NSArray<SCRunningApplication *> *)apps
+                                           filterMode:(CaptureFilterMode)mode;
 
 - (SCContentFilter * _Nullable)createFilterForDisplay:(SCDisplay *)display
                                          applications:(NSArray<SCRunningApplication *> *)apps;

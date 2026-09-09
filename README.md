@@ -7,7 +7,7 @@
 [![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B%20%28Ventura%2B%29-007AFF?style=for-the-badge&logo=apple&logoColor=white)](https://apple.com)
 [![OBS Studio](https://img.shields.io/badge/OBS%20Studio-30.0%2B-302D42?style=for-the-badge&logo=obsstudio&logoColor=white)](https://obsproject.com)
 [![ScreenCaptureKit](https://img.shields.io/badge/Engine-Apple%20ScreenCaptureKit-FF9500?style=for-the-badge&logo=apple&logoColor=white)](https://developer.apple.com/documentation/screencapturekit)
-[![Performance](https://img.shields.io/badge/Rendering-Zero--Copy%20IOSurface-34C759?style=for-the-badge&logo=speedtest&logoColor=white)](#performance--architecture)
+[![Performance](https://img.shields.io/badge/Rendering-Zero--Copy%20IOSurface-34C759?style=for-the-badge&logo=speedtest&logoColor=white)](#-architecture--hardware-pipeline)
 [![License](https://img.shields.io/badge/License-GPL%20v2.0-blue?style=for-the-badge)](LICENSE)
 [![Buy Me A Coffee](https://img.shields.io/badge/Support-Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/Nishant4)
 
@@ -36,13 +36,35 @@
 
 ---
 
+## 📑 Table of Contents
+
+- [🌟 Overview](#-overview)
+- [✨ Key Features](#-key-features)
+- [🎛️ Source Properties UI](#️-source-properties-ui)
+- [⌨️ Universal Hotkeys (Instant Hide From Any App)](#️-universal-hotkeys-instant-hide-from-any-app)
+- [🏗️ Architecture & Hardware Pipeline](#️-architecture--hardware-pipeline)
+- [📋 System Requirements](#-system-requirements)
+- [🚀 Quick Start & Installation](#-quick-start--installation)
+- [🎥 Using Privacy Capture in OBS Studio](#-using-privacy-capture-in-obs-studio)
+- [❓ Frequently Asked Questions (FAQ)](#-frequently-asked-questions-faq)
+- [🧪 Testing & Verification](#-testing--verification)
+- [☕ Support the Project](#-support-the-project)
+- [👨‍💻 Author & Credits](#-author--credits)
+- [📄 License](#-license)
+
+---
+
 ## 🌟 Overview
 
-**Privacy Capture** (`privacy_capture`) is a native OBS Studio plugin for macOS that solves the long-standing privacy problem for streamers and creators: **"Capture everything on my display EXCEPT these sensitive apps."**
+**Privacy Capture** (`privacy_capture`) is a high-performance native OBS Studio plugin for macOS that solves the long-standing privacy challenge for streamers, developers, educators, and creators: **"Capture my entire monitor, but exclude specific sensitive applications."**
 
-Instead of capturing the screen and attempting to blur or mask pixels after the fact, Privacy Capture leverages Apple's OS-level **ScreenCaptureKit** compositor filter (`SCContentFilter`). The operating system itself removes the excluded applications before the video frames ever reach OBS.
+### The Problem
+Normal Display Capture broadcasts *everything* on your screen. If a private chat pops up on Discord, sensitive tokens appear in your Terminal, or you need to unlock 1Password, your viewers see it unless you quickly scramble to minimize windows, drag them off-screen, or switch scenes.
 
-> 🔒 **Streamer View vs. Viewer View**: Excluded applications remain completely visible and usable on your physical Mac monitor, but are completely absent from OBS Studio's preview, video recordings, and live streams.
+### The Solution
+Instead of capturing the full screen and attempting to blur or mask pixels after the fact, **Privacy Capture leverages Apple's OS-level ScreenCaptureKit compositor** (`SCContentFilter`). macOS WindowServer itself removes the excluded applications before the video frames ever enter OBS Studio.
+
+> 🔒 **Streamer View vs. Viewer View**: Excluded applications remain completely visible and interactive on your physical monitor, but are 100% invisible in OBS Preview, recordings, and live broadcasts!
 
 ---
 
@@ -50,18 +72,66 @@ Instead of capturing the screen and attempting to blur or mask pixels after the 
 
 | Feature | Description |
 | :--- | :--- |
-| **🛡️ Native OS Filtering** | Powered by Apple's `SCContentFilter(display:excludingApplications:exceptingWindows:)` directly inside macOS WindowServer. |
-| **⚡ Zero-Copy Hardware Pipeline** | Direct `CVPixelBuffer` ➔ `IOSurface` ➔ `gs_texture_create_from_iosurface` GPU binding. Direct hardware texturing with **< 5% CPU usage at 1080p60 / 4K60**. |
-| **⌨️ Universal Hotkey Support** | Press a global shortcut key from within **any active application** to immediately hide or toggle it from the live stream. |
-| **🔄 Dynamic App Detection** | Subscribes to `NSWorkspace` app lifecycle notifications. When an excluded app launches or quits, the capture filter updates instantly without restarting the stream. |
-| **🎯 Stable Bundle Identifiers** | Persists exclusions using canonical macOS bundle IDs (e.g. `com.hnc.Discord`, `com.google.Chrome`, `com.apple.Terminal`) rather than brittle window titles. |
+| **🛡️ Native OS-Level Filtering** | Powered by Apple's `SCContentFilter(display:excludingApplications:exceptingWindows:)` directly inside macOS WindowServer. |
+| **⚡ Zero-Copy Hardware Pipeline** | Direct `CVPixelBuffer` ➔ `IOSurface` ➔ `gs_texture_create_from_iosurface` GPU binding. Direct hardware texturing with **< 5% CPU overhead at 1080p60 / 4K60**. |
+| **⌨️ Universal Hotkey System** | Press a global keyboard shortcut while inside **any focused application** to instantly hide or toggle it from your live stream. |
+| **🔄 Real-Time Dynamic Detection** | Subscribes to `NSWorkspace` application lifecycle notifications. When an excluded app opens or closes, the capture filter updates seamlessly without stream restarts or dropped frames. |
+| **🎯 Stable Bundle Identifiers** | Persists exclusions using canonical macOS bundle IDs (e.g. `com.hnc.Discord`, `com.google.Chrome`, `com.apple.Terminal`) rather than fragile window titles. |
 | **🎛️ Native OBS Properties UI** | Includes a monitor selector, running applications dropdown picker with 1-click **Exclude**, and an editable exclusions list. |
-| **🖥️ Multi-Display & Retina** | Full support for Retina 2x scaling, Display P3 wide color gamut, and multiple active monitors. |
-| **🔒 Fail-Closed Security** | The status indicator only reports active protection if the application is verified to be in the active filter. |
+| **🖥️ Multi-Display & Retina Scaling** | Full native support for Retina 2x scaling, Display P3 wide color gamut, and multi-monitor setups. |
+| **🔒 Fail-Closed Privacy Guarantee** | The status indicator only reports active protection when the application is verified to be actively filtered by macOS. |
 
 ---
 
-## 🏗️ Architecture & Pipeline
+## 🎛️ Source Properties UI
+
+Privacy Capture provides an intuitive, native property inspector right inside OBS Studio:
+
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│ Privacy Capture Properties                                             │
+├────────────────────────────────────────────────────────────────────────┤
+│ Display               [ Built-in Retina Display (1920x1080)        ▼ ] │
+│ ☑ Capture Cursor                                                       │
+│ ☑ Automatically detect launched/closed apps                            │
+│                                                                        │
+│ Running Applications  [ Discord (com.hnc.Discord)                  ▼ ] │
+│                       [ Exclude Selected Application ]                 │
+│                                                                        │
+│ Excluded Applications (Bundle IDs):                                    │
+│ ┌────────────────────────────────────────────────────────────────────┐ │
+│ │ com.hnc.Discord                                                    │ │
+│ │ com.apple.Terminal                                                 │ │
+│ │ com.agilebits.onepassword                                          │ │
+│ └────────────────────────────────────────────────────────────────────┘ │
+│                       [ Refresh Applications ]                         │
+│                                                                        │
+│ Status: ● Active: 3 configured, 2 running (Discord, Terminal)          │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ⌨️ Universal Hotkeys (Instant Hide From Any App)
+
+Privacy Capture registers global system hotkeys through OBS Studio, allowing you to exclude whatever app you are currently looking at on your Mac **without needing to switch windows or open OBS**:
+
+| Hotkey Action | Behavior |
+| :--- | :--- |
+| **Toggle Exclude Active Application** | Focus any window (e.g. *Discord*, *WhatsApp*, *VS Code*, *Browser*) and press your shortcut. If it is visible, it immediately disappears from the stream; press again to show it. Plays a subtle audio confirmation chime (`NSBeep`). |
+| **Exclude Active Application** | One-touch panic hide: immediately adds the active frontmost application to your exclusion filter. |
+| **Clear All Excluded Applications** | Instantly clears all excluded applications, restoring full monitor capture. |
+
+### How to Configure Hotkeys:
+1. Open **OBS Studio** > **Settings** (or press `⌘ + ,`).
+2. Select **Hotkeys** in the left sidebar.
+3. Search for **Privacy Capture** (or scroll to your Privacy Capture source).
+4. Assign your preferred key combinations (for example: `⌥ + ⌘ + H` for *Toggle Active*, or `⌃ + ⌥ + P` for *Exclude Active*).
+5. Click **Apply** / **OK**. Now, whenever you are working in any application on macOS, tap your hotkey to instantly protect your privacy on stream!
+
+---
+
+## 🏗️ Architecture & Hardware Pipeline
 
 ```
  ┌──────────────────────────────────────────────────────────┐
@@ -108,14 +178,22 @@ Instead of capturing the screen and attempting to blur or mask pixels after the 
 
 ---
 
-## 🚀 Installation & Quick Start
+## 🚀 Quick Start & Installation
 
-### Option 1: Automatic Build & Install from Source
+### Option 1: Automatic 1-Step Installation Script
 
-Ensure you have [Homebrew](https://brew.sh) and CMake installed:
+Run this command in Terminal to build and install the plugin automatically:
 
 ```bash
-# 1. Install dependencies
+git clone https://github.com/Itsnishant4/obs-privacy-capture.git
+cd obs-privacy-capture
+./scripts/install.sh
+```
+
+### Option 2: Manual Build & Install from Source
+
+```bash
+# 1. Install build tools and dependencies
 brew install cmake simde
 
 # 2. Clone repository
@@ -123,11 +201,14 @@ git clone https://github.com/Itsnishant4/obs-privacy-capture.git
 cd obs-privacy-capture
 
 # 3. Configure and build
-cmake -B build -S .
-cmake --build build
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
 
 # 4. Install plugin into OBS
 cmake --install build
+
+# 5. Clear quarantine attributes (if needed)
+xattr -cr "$HOME/Library/Application Support/obs-studio/plugins/obs-privacy-capture.plugin"
 ```
 
 The plugin bundle will be installed directly to:
@@ -151,28 +232,33 @@ The plugin bundle will be installed directly to:
 
 ---
 
-## ⌨️ Universal Hotkeys (Hide Any App From Anywhere)
+## ❓ Frequently Asked Questions (FAQ)
 
-Privacy Capture registers global system hotkeys through OBS Studio, allowing you to exclude whatever app you are currently looking at on your Mac **without needing to switch windows or open OBS**:
+<details>
+<summary><b>Why is the excluded app still visible on my screen?</b></summary>
+That is the intended design! Privacy Capture filters the video stream captured by OBS, not your physical screen. You can continue reading private notes, typing passwords, or chatting with friends while your viewers see whatever content is behind that window.
+</details>
 
-| Hotkey Action | Behavior |
-| :--- | :--- |
-| **Toggle Exclude Active Application** | Focus any window (e.g. *Discord*, *WhatsApp*, *VS Code*, *Browser*) and press your shortcut. If it is visible, it immediately disappears from the stream; press again to show it. Plays a subtle audio confirmation chime (`NSBeep`). |
-| **Exclude Active Application** | One-touch panic hide: immediately adds the active frontmost application to your exclusion filter. |
-| **Clear All Excluded Applications** | Instantly clears all excluded applications, restoring full monitor capture. |
+<details>
+<summary><b>Does this plugin mute or hide application audio?</b></summary>
+Privacy Capture focuses exclusively on video filtering. If you want to capture or mute specific application audio, use OBS Studio's built-in <b>Application Audio Capture (macOS)</b> source.
+</details>
 
-### How to Configure Hotkeys:
-1. Open **OBS Studio** > **Settings** (or press `⌘ + ,`).
-2. Select **Hotkeys** in the left sidebar.
-3. Search for **Privacy Capture** (or scroll to your Privacy Capture source).
-4. Assign your preferred key combinations (for example: `⌥ + ⌘ + H` for *Toggle Active*, or `⌃ + ⌥ + P` for *Exclude Active*).
-5. Click **Apply** / **OK**. Now, whenever you are working in any application on macOS, tap your hotkey to instantly protect your privacy on stream!
+<details>
+<summary><b>What happens if I close an excluded application and reopen it later?</b></summary>
+Privacy Capture remembers all configured bundle identifiers. When an excluded application is relaunched, the plugin automatically detects it and reapplies the exclusion filter instantly without requiring any action.
+</details>
+
+<details>
+<summary><b>What should I do if OBS shows "Permission Required"?</b></summary>
+Open <b>System Settings > Privacy & Security > Screen Recording</b> and ensure that OBS Studio has toggle enabled. Restart OBS after enabling permission.
+</details>
 
 ---
 
 ## 🧪 Testing & Verification
 
-The project comes with a comprehensive test suite covering serialization, application resolution, standalone capture POC, and OBS module loading:
+The project comes with a comprehensive automated test suite covering serialization, application resolution, standalone capture POC, and OBS module loading:
 
 ```bash
 ctest --test-dir build --output-on-failure

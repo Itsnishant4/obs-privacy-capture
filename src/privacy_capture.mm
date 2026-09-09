@@ -12,6 +12,9 @@ struct privacy_capture_source {
     gs_texture_t *tex;
     IOSurfaceRef prev_surface;
     PrivacyCaptureSettings settings;
+    obs_hotkey_id hotkey_exclude_active;
+    obs_hotkey_id hotkey_toggle_active;
+    obs_hotkey_id hotkey_clear_exclusions;
 };
 
 static const char *privacy_capture_get_name(void *unused) {
@@ -19,9 +22,116 @@ static const char *privacy_capture_get_name(void *unused) {
     return obs_module_text("PrivacyCapture.Name");
 }
 
+static void hotkey_exclude_active(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed) {
+    (void)id;
+    (void)hotkey;
+    if (!pressed) return;
+
+    struct privacy_capture_source *s = (struct privacy_capture_source *)data;
+    if (!s || !s->engine) return;
+
+    NSRunningApplication *front = [[NSWorkspace sharedWorkspace] frontmostApplication];
+    if (!front || !front.bundleIdentifier) return;
+
+    NSString *main_bid = [[NSBundle mainBundle] bundleIdentifier];
+    if (main_bid && [front.bundleIdentifier isEqualToString:main_bid]) {
+        blog(LOG_INFO, "[PrivacyCapture] Frontmost application is OBS Studio itself. Ignoring hotkey.");
+        return;
+    }
+
+    std::string bid = [front.bundleIdentifier UTF8String];
+    std::string name = front.localizedName ? [front.localizedName UTF8String] : bid;
+
+    bool added = s->settings.add_excluded_app(bid, name);
+    if (added) {
+        blog(LOG_INFO, "[PrivacyCapture] Universal Hotkey Exclude: Added '%s' (%s) to exclusions", name.c_str(), bid.c_str());
+        NSBeep();
+    }
+
+    obs_data_t *settings = obs_source_get_settings(s->source);
+    if (settings) {
+        privacy_capture_settings_save(s->settings, settings);
+        obs_data_release(settings);
+    }
+
+    s->engine->updateSettings(s->settings);
+}
+
+static void hotkey_toggle_active(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed) {
+    (void)id;
+    (void)hotkey;
+    if (!pressed) return;
+
+    struct privacy_capture_source *s = (struct privacy_capture_source *)data;
+    if (!s || !s->engine) return;
+
+    NSRunningApplication *front = [[NSWorkspace sharedWorkspace] frontmostApplication];
+    if (!front || !front.bundleIdentifier) return;
+
+    NSString *main_bid = [[NSBundle mainBundle] bundleIdentifier];
+    if (main_bid && [front.bundleIdentifier isEqualToString:main_bid]) {
+        blog(LOG_INFO, "[PrivacyCapture] Frontmost application is OBS Studio itself. Ignoring hotkey.");
+        return;
+    }
+
+    std::string bid = [front.bundleIdentifier UTF8String];
+    std::string name = front.localizedName ? [front.localizedName UTF8String] : bid;
+
+    if (s->settings.is_app_excluded(bid)) {
+        s->settings.remove_excluded_app(bid);
+        blog(LOG_INFO, "[PrivacyCapture] Universal Hotkey Toggle: Un-excluded '%s' (%s)", name.c_str(), bid.c_str());
+    } else {
+        s->settings.add_excluded_app(bid, name);
+        blog(LOG_INFO, "[PrivacyCapture] Universal Hotkey Toggle: Excluded '%s' (%s)", name.c_str(), bid.c_str());
+        NSBeep();
+    }
+
+    obs_data_t *settings = obs_source_get_settings(s->source);
+    if (settings) {
+        privacy_capture_settings_save(s->settings, settings);
+        obs_data_release(settings);
+    }
+
+    s->engine->updateSettings(s->settings);
+}
+
+static void hotkey_clear_exclusions(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed) {
+    (void)id;
+    (void)hotkey;
+    if (!pressed) return;
+
+    struct privacy_capture_source *s = (struct privacy_capture_source *)data;
+    if (!s || !s->engine) return;
+
+    s->settings.clear_excluded_apps();
+    blog(LOG_INFO, "[PrivacyCapture] Universal Hotkey Clear: Cleared all exclusions");
+    NSBeep();
+
+    obs_data_t *settings = obs_source_get_settings(s->source);
+    if (settings) {
+        privacy_capture_settings_save(s->settings, settings);
+        obs_data_release(settings);
+    }
+
+    s->engine->updateSettings(s->settings);
+}
+
 static void privacy_capture_destroy(void *data) {
     struct privacy_capture_source *s = (struct privacy_capture_source *)data;
     if (!s) return;
+
+    if (s->hotkey_exclude_active) {
+        obs_hotkey_unregister(s->hotkey_exclude_active);
+        s->hotkey_exclude_active = OBS_INVALID_HOTKEY_ID;
+    }
+    if (s->hotkey_toggle_active) {
+        obs_hotkey_unregister(s->hotkey_toggle_active);
+        s->hotkey_toggle_active = OBS_INVALID_HOTKEY_ID;
+    }
+    if (s->hotkey_clear_exclusions) {
+        obs_hotkey_unregister(s->hotkey_clear_exclusions);
+        s->hotkey_clear_exclusions = OBS_INVALID_HOTKEY_ID;
+    }
 
     if (s->engine) {
         s->engine->stop();
@@ -66,6 +176,29 @@ static void *privacy_capture_create(obs_data_t *settings, obs_source_t *source) 
     }
 
     s->engine->start(s->settings, target_fps);
+
+    // Register Universal Hotkeys with OBS source
+    s->hotkey_exclude_active = obs_hotkey_register_source(
+        source,
+        "PrivacyCapture.Hotkey.ExcludeActive",
+        obs_module_text("PrivacyCapture.Hotkey.ExcludeActive"),
+        hotkey_exclude_active,
+        s);
+
+    s->hotkey_toggle_active = obs_hotkey_register_source(
+        source,
+        "PrivacyCapture.Hotkey.ToggleActive",
+        obs_module_text("PrivacyCapture.Hotkey.ToggleActive"),
+        hotkey_toggle_active,
+        s);
+
+    s->hotkey_clear_exclusions = obs_hotkey_register_source(
+        source,
+        "PrivacyCapture.Hotkey.ClearExclusions",
+        obs_module_text("PrivacyCapture.Hotkey.ClearExclusions"),
+        hotkey_clear_exclusions,
+        s);
+
     return s;
 }
 

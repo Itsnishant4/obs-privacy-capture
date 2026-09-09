@@ -52,6 +52,7 @@ Instead of capturing the screen and attempting to blur or mask pixels after the 
 | :--- | :--- |
 | **🛡️ Native OS Filtering** | Powered by Apple's `SCContentFilter(display:excludingApplications:exceptingWindows:)` directly inside macOS WindowServer. |
 | **⚡ Zero-Copy Hardware Pipeline** | Direct `CVPixelBuffer` ➔ `IOSurface` ➔ `gs_texture_create_from_iosurface` GPU binding. Direct hardware texturing with **< 5% CPU usage at 1080p60 / 4K60**. |
+| **⌨️ Universal Hotkey Support** | Press a global shortcut key from within **any active application** to immediately hide or toggle it from the live stream. |
 | **🔄 Dynamic App Detection** | Subscribes to `NSWorkspace` app lifecycle notifications. When an excluded app launches or quits, the capture filter updates instantly without restarting the stream. |
 | **🎯 Stable Bundle Identifiers** | Persists exclusions using canonical macOS bundle IDs (e.g. `com.hnc.Discord`, `com.google.Chrome`, `com.apple.Terminal`) rather than brittle window titles. |
 | **🎛️ Native OBS Properties UI** | Includes a monitor selector, running applications dropdown picker with 1-click **Exclude**, and an editable exclusions list. |
@@ -88,6 +89,7 @@ Instead of capturing the screen and attempting to blur or mask pixels after the 
  ├──────────────────────────────────────────────────────────┤
  │ • video_tick:   Binds/rebinds IOSurface into gs_texture  │
  │ • video_render: Draws sprite via OBS DrawD65P3 shader    │
+ │ • hotkeys:      Universal active app exclude & toggle    │
  │ • properties:   Display, App picker, Excluded List, State│
  └────────────────────────────┬─────────────────────────────┘
                               │ Filtered Frame
@@ -146,6 +148,25 @@ The plugin bundle will be installed directly to:
    - Click **`Exclude Selected Application`**.
    - The application's bundle identifier is added to the **Excluded Applications** list.
 5. The application is now invisible in your OBS Preview, recorded videos, and live broadcasts, but remains fully visible on your monitor!
+
+---
+
+## ⌨️ Universal Hotkeys (Hide Any App From Anywhere)
+
+Privacy Capture registers global system hotkeys through OBS Studio, allowing you to exclude whatever app you are currently looking at on your Mac **without needing to switch windows or open OBS**:
+
+| Hotkey Action | Behavior |
+| :--- | :--- |
+| **Toggle Exclude Active Application** | Focus any window (e.g. *Discord*, *WhatsApp*, *VS Code*, *Browser*) and press your shortcut. If it is visible, it immediately disappears from the stream; press again to show it. Plays a subtle audio confirmation chime (`NSBeep`). |
+| **Exclude Active Application** | One-touch panic hide: immediately adds the active frontmost application to your exclusion filter. |
+| **Clear All Excluded Applications** | Instantly clears all excluded applications, restoring full monitor capture. |
+
+### How to Configure Hotkeys:
+1. Open **OBS Studio** > **Settings** (or press `⌘ + ,`).
+2. Select **Hotkeys** in the left sidebar.
+3. Search for **Privacy Capture** (or scroll to your Privacy Capture source).
+4. Assign your preferred key combinations (for example: `⌥ + ⌘ + H` for *Toggle Active*, or `⌃ + ⌥ + P` for *Exclude Active*).
+5. Click **Apply** / **OK**. Now, whenever you are working in any application on macOS, tap your hotkey to instantly protect your privacy on stream!
 
 ---
 
